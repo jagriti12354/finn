@@ -20,6 +20,7 @@ from datetime import datetime, timedelta, timezone
 import requests
 from dotenv import load_dotenv
 
+from ingest.biotext import lines_for
 from ingest.prices import compute_alerts
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -127,8 +128,9 @@ def _move_text(move: dict, event_date: str | None = None) -> str:
     return f"{when}: {_pct(move['change_pct'])} on {move['volume_x']:.1f}x volume{market}"
 
 
-def filing_card(event: dict, results: list[dict]) -> dict:
+def filing_card(event: dict, results: list[dict], bios: dict | None = None) -> dict:
     lines, verified = [], False
+    bio_lines = lines_for(bios[event_key(event)]) if bios and event_key(event) in bios else []
     title = f'{_name(event["symbol"])} · {LABEL.get(event["category"], event["category"])}'
     if event["category"] == "results":
         result = result_for(event, results)
@@ -141,6 +143,8 @@ def filing_card(event: dict, results: list[dict]) -> dict:
                     lines.append(f'{label} ₹{m["current"]:,.0f} cr · YoY {_pct(m["yoy_pct"])} · QoQ {_pct(m["qoq_pct"])}')
         else:
             lines.append("Results filed. Numbers not verified yet.")
+    elif bio_lines:
+        lines.extend(bio_lines)
     else:
         lines.append(" ".join(event["headline"].split())[:180])
     return {"key": event_key(event), "kind": "filing", "symbol": event["symbol"], "category": event["category"],
@@ -158,10 +162,10 @@ def move_card(move: dict, context: str | None) -> dict:
 
 
 def build_cards(events: list[dict], moves: list[dict], results: list[dict], sent: dict, since: datetime, now: datetime,
-                previous: str) -> list[dict]:
+                previous: str, bios: dict | None = None) -> list[dict]:
     """New filing cards in the window, with each price move merged in or given its own card."""
     current = [e for e in events if e.get("time") and _dt(e["time"]) <= now]
-    cards = {event_key(e): filing_card(e, results) for e in current
+    cards = {event_key(e): filing_card(e, results, bios) for e in current
              if since <= _dt(e["time"]) and event_key(e) not in sent}
     separate = []
     for move in moves:
@@ -207,7 +211,7 @@ def assign_lanes(cards: list[dict], remaining_pings: int, ping_categories: set[s
 
 
 def window_view(feed: dict, prices: dict, results: list[dict], now: datetime, hours: float, alerts: dict,
-                ping_categories: set[str]) -> dict:
+                ping_categories: set[str], bios: dict | None = None) -> dict:
     """The digest for any window the user picks: every P1/P2 card and move, with routine filings listed separately."""
     since = now - timedelta(hours=hours)
     series, market = prices.get("series", {}), prices.get("market", [])
@@ -217,7 +221,7 @@ def window_view(feed: dict, prices: dict, results: list[dict], now: datetime, ho
     for session in sessions:
         previous = previous_session(series, session)
         moves += [{**m, "previous": previous} for m in moves_for(series, market, session, alerts)]
-    cards = build_cards(feed.get("events", []), moves, results, {}, since, now, "")
+    cards = build_cards(feed.get("events", []), moves, results, {}, since, now, "", bios)
     headlines = {event_key(e): e["headline"] for e in feed.get("events", [])}
     for card in cards:
         card["would_ping"] = wants_ping(card, ping_categories, headlines)
@@ -335,7 +339,7 @@ def main():
         previous = previous_session(prices["series"], session)
         moves = moves_for(prices["series"], prices.get("market", []), session, alerts)
 
-    cards = build_cards(feed["events"], moves, results, state["sent"], since, now, previous)
+    cards = build_cards(feed["events"], moves, results, state["sent"], since, now, previous, _read("bios.json", {}))
     headlines = {event_key(e): e["headline"] for e in feed["events"]}
     day = now.date().isoformat()
     remaining = 0 if args.digest else max(0, max_pings - pings_sent_on(state["sent"], day))

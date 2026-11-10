@@ -10,7 +10,7 @@ import json, pathlib
 from api.store import get_store
 
 DATA = pathlib.Path(__file__).resolve().parents[1] / "data"
-FILES = {"feed": "announcements.json", "prices": "prices.json", "results": "results.json"}
+FILES = {"feed": "announcements.json", "prices": "prices.json", "results": "results.json", "bios": "bios.json"}
 
 
 def main():

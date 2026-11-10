@@ -11,6 +11,7 @@ echo ===== %date% %time% %1 >> %LOG%
 if /i "%1"=="filings" (
     %PY% -m ingest.announcements --days 30 >> %LOG% 2>&1
     %PY% -m ingest.enrich >> %LOG% 2>&1
+    %PY% -m ingest.bios >> %LOG% 2>&1
     %PY% -m ingest.push >> %LOG% 2>&1
     %PY% -m ingest.publish >> %LOG% 2>&1
 )

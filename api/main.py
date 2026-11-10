@@ -79,7 +79,7 @@ def digest(hours: float = Query(24, gt=0, le=720)):
         raise HTTPException(503, "No data published yet")
     settings = _settings()
     view = window_view(feed, store.get("pipeline", "prices") or {}, (store.get("pipeline", "results") or {}).get("results", []),
-                       _now(), hours, settings["alerts"], set(settings["ping_categories"]))
+                       _now(), hours, settings["alerts"], set(settings["ping_categories"]), store.get("pipeline", "bios"))
     states = store.items("card_state")
     for card in view["cards"]:
         card["state"] = states.get(card["key"])
