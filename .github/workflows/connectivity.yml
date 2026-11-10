@@ -1,0 +1,61 @@
+name: connectivity
+
+# Can GitHub's servers reach FINN's data sources? Needs no code from the repo and no secrets.
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install the HTTP client FINN uses
+        run: python3 -m pip install --quiet requests
+      - name: Check data sources
+        run: |
+          python3 - <<'PY'
+          import sys
+          from datetime import date, timedelta
+          import requests
+
+          UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36"
+          today = date.today()
+          BSE_PARAMS = {"pageno": 1, "strCat": "-1", "strPrevDate": (today - timedelta(days=30)).strftime("%Y%m%d"),
+                        "strScrip": "532540", "strSearch": "P", "strToDate": today.strftime("%Y%m%d"), "strType": "C", "subcategory": "-1"}
+          BSE_HEADERS = {"Referer": "https://www.bseindia.com/", "Origin": "https://www.bseindia.com", "Accept": "application/json, text/plain, */*"}
+          CHART = {"range": "1mo", "interval": "1d"}
+
+          def bse_ok(r):
+              rows = r.json().get("Table", [])
+              return bool(rows), f"{len(rows)} filings"
+
+          def yahoo_ok(r):
+              bars = r.json()["chart"]["result"][0].get("timestamp") or []
+              return bool(bars), f"{len(bars)} bars"
+
+          def screener_ok(r):
+              found = 'id="quarters"' in r.text
+              return found, "quarterly table found" if found else "no quarterly table"
+
+          CHECKS = [
+              ("BSE filings", "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w", BSE_PARAMS, BSE_HEADERS, bse_ok),
+              ("Yahoo stock", "https://query1.finance.yahoo.com/v8/finance/chart/RELIANCE.NS", CHART, {"Accept": "application/json"}, yahoo_ok),
+              ("Yahoo Nifty", "https://query1.finance.yahoo.com/v8/finance/chart/^NSEI", CHART, {"Accept": "application/json"}, yahoo_ok),
+              ("Screener", "https://www.screener.in/company/RELIANCE/consolidated/", None, {}, screener_ok),
+          ]
+
+          failed = 0
+          for name, url, params, headers, ok in CHECKS:
+              try:
+                  r = requests.get(url, params=params, headers={"User-Agent": UA, **headers}, timeout=30)
+                  r.raise_for_status()
+                  status = r.status_code
+                  passed, detail = ok(r)
+              except requests.HTTPError as e:
+                  passed, status, detail = False, e.response.status_code, e.response.reason
+              except Exception as e:
+                  passed, status, detail = False, "-", f"{type(e).__name__}: {str(e)[:100]}"
+              failed += not passed
+              print(f"{'PASS' if passed else 'FAIL'}  {name:<12} HTTP {status}  {detail}")
+          print(f"\n{len(CHECKS) - failed} of {len(CHECKS)} sources reachable")
+          sys.exit(1 if failed else 0)
+          PY

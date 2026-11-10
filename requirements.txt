@@ -1,0 +1,7 @@
+requests
+pypdf
+fastapi
+uvicorn
+python-dotenv
+pytest
+httpx

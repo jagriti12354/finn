@@ -1,0 +1,34 @@
+{
+  "_note": "18-stock mock portfolio. BSE codes are used for the announcements feed; verify any code flagged by `python -m ingest.announcements --verify`.",
+  "portfolio": [
+    {"symbol": "RELIANCE",   "bse": "500325", "name": "Reliance Industries",     "sector": "Conglomerate",       "size": "Large"},
+    {"symbol": "HDFCBANK",   "bse": "500180", "name": "HDFC Bank",               "sector": "Banking",            "size": "Large"},
+    {"symbol": "TCS",        "bse": "532540", "name": "Tata Consultancy Services","sector": "IT Services",       "size": "Large"},
+    {"symbol": "ITC",        "bse": "500875", "name": "ITC",                     "sector": "FMCG",               "size": "Large"},
+    {"symbol": "MARUTI",     "bse": "532500", "name": "Maruti Suzuki",           "sector": "Auto",               "size": "Large"},
+    {"symbol": "LT",         "bse": "500510", "name": "Larsen & Toubro",         "sector": "Capital Goods",      "size": "Large"},
+    {"symbol": "TITAN",      "bse": "500114", "name": "Titan Company",           "sector": "Consumer Durables",  "size": "Large"},
+    {"symbol": "SUNPHARMA",  "bse": "524715", "name": "Sun Pharmaceutical",      "sector": "Pharma",             "size": "Large"},
+    {"symbol": "BAJFINANCE", "bse": "500034", "name": "Bajaj Finance",           "sector": "NBFC",               "size": "Large"},
+    {"symbol": "ETERNAL",    "bse": "543320", "name": "Eternal (Zomato)",        "sector": "Consumer Internet",  "size": "Large"},
+    {"symbol": "TRENT",      "bse": "500251", "name": "Trent",                   "sector": "Retail",             "size": "Large"},
+    {"symbol": "HAL",        "bse": "541154", "name": "Hindustan Aeronautics",   "sector": "Defence",            "size": "Large"},
+    {"symbol": "DIXON",      "bse": "540699", "name": "Dixon Technologies",      "sector": "Electronics Mfg",    "size": "Mid"},
+    {"symbol": "POLYCAB",    "bse": "542652", "name": "Polycab India",           "sector": "Cables & Wires",     "size": "Mid"},
+    {"symbol": "KPITTECH",   "bse": "542651", "name": "KPIT Technologies",       "sector": "Auto Software",      "size": "Mid"},
+    {"symbol": "PIIND",      "bse": "523642", "name": "PI Industries",           "sector": "Agrochemicals",      "size": "Mid"},
+    {"symbol": "DEEPAKNTR",  "bse": "506401", "name": "Deepak Nitrite",          "sector": "Chemicals",          "size": "Mid"},
+    {"symbol": "ANGELONE",   "bse": "543235", "name": "Angel One",               "sector": "Capital Markets",    "size": "Small"}
+  ],
+  "research_demo": ["ASIANPAINT", "DMART", "NAUKRI", "CAMS"],
+  "push": {
+    "max_pings_per_day": 5,
+    "ping_categories": ["results", "management_change", "M&A", "pledging", "credit_rating"]
+  },
+  "alerts": {
+    "volume_multiple": 2.0,
+    "volume_lookback_days": 20,
+    "price_move_pct": 4.0,
+    "categories": ["results", "M&A", "management_change", "fund_raise", "litigation", "credit_rating", "pledging"]
+  }
+}
