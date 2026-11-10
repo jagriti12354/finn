@@ -20,7 +20,7 @@ from datetime import datetime, timedelta, timezone
 import requests
 from dotenv import load_dotenv
 
-from ingest.biotext import lines_for
+from ingest.biotext import lines_for, top_level_change
 from ingest.prices import compute_alerts
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -147,8 +147,11 @@ def filing_card(event: dict, results: list[dict], bios: dict | None = None) -> d
         lines.extend(bio_lines)
     else:
         lines.append(" ".join(event["headline"].split())[:180])
+    priority = event["priority"]
+    if event["category"] == "management_change" and bios and top_level_change(bios.get(event_key(event), {})):
+        priority = 1  # a vague headline hid the role; the filing shows it
     return {"key": event_key(event), "kind": "filing", "symbol": event["symbol"], "category": event["category"],
-            "priority": event["priority"], "time": event["time"], "title": title, "lines": lines, "pdf": event.get("pdf"),
+            "priority": priority, "time": event["time"], "title": title, "lines": lines, "pdf": event.get("pdf"),
             "verified": verified, "severity": 0.0, "move_key": None, "lane": None}
 
 

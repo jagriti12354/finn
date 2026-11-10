@@ -96,6 +96,14 @@ def test_a_person_with_no_web_trace_is_not_searched_again(monkeypatch):
     assert len(calls) == 1 and first["status"] == "done"
 
 
+def test_role_from_the_filing_raises_a_vague_headline_to_p1():
+    event = {"symbol": "X", "category": "management_change", "priority": 2, "time": "2026-11-05T10:00:00", "headline": "Change in Management", "pdf": None, "filing_ids": [1]}
+    bio = lambda role, kind="appointed": {"X:management_change:1": {"changes": [change(role=role, change_type=kind)]}}
+    assert filing_card(event, [], bio("Additional Director (Executive Director)"))["priority"] == 1
+    assert filing_card(event, [], bio("Group Head, Business Banking"))["priority"] == 2
+    assert filing_card(event, [], bio("Managing Director", "reappointed"))["priority"] == 2
+
+
 def test_management_card_uses_the_bio_and_other_cards_keep_the_headline():
     event = {"symbol": "X", "category": "management_change", "priority": 1, "time": "2026-11-05T10:00:00", "headline": "Change in Management", "pdf": None, "filing_ids": [1]}
     card = filing_card(event, [], {"X:management_change:1": {"changes": [change()]}})

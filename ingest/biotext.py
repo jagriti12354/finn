@@ -1,8 +1,17 @@
 """Card text for a management change. Each background says where it came from."""
 from __future__ import annotations
+import re
 from urllib.parse import urlparse
 
 VERBS = {"appointed": "Appointed", "reappointed": "Reappointed", "resigned": "Resigned", "retired": "Retiring", "redesignated": "New role", "other": "Change"}
+
+
+_TOP = re.compile(r"\b(director|ceo|cfo|coo|managing|chairman|chairperson|chief)\b", re.I)
+
+
+def top_level_change(bio: dict) -> bool:
+    """A director or C-suite role, read from the filing. "Reappointed" isn't news, so it doesn't count."""
+    return any(c["change_type"] != "reappointed" and _TOP.search(c.get("role") or "") for c in bio.get("changes", []))
 
 
 def is_incoming(change: dict) -> bool:
