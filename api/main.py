@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from api.store import get_store
+from ingest.announcements import fetch_scrip
 from ingest.enrich import choose_models
 from ingest.push import window_view
 from ingest.screener import CompanyNotFound, HEADERS as SCREENER_HEADERS
@@ -61,6 +62,12 @@ def sources():
     if calls:
         checks["transcript_pdf"] = (calls[0]["url"], {**SCREENER_HEADERS, "Referer": "https://www.bseindia.com/"})
     out = {}
+    try:  # the filings feed; BSE blocked GitHub's servers, so this decides whether it can run here
+        end = datetime.now(IST)
+        rows = fetch_scrip("532540", end - timedelta(days=30), end)
+        out["bse_filings_api"] = {"ok": bool(rows), "rows": len(rows)}
+    except Exception as e:
+        out["bse_filings_api"] = {"ok": False, "error": f"{type(e).__name__}: {str(e)[:120]}"}
     for name, (url, headers) in checks.items():
         try:
             r = requests.get(url, headers=headers, timeout=30, stream=True)
