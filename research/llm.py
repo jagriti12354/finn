@@ -46,8 +46,9 @@ def _call_groq(prompt: str, required: tuple[str, ...], key: str) -> tuple[dict, 
     return data, tokens, f"groq/{model}"
 
 
-def complete_json(prompt: str, schema: dict, models: list[str], key: str, required: tuple[str, ...]) -> tuple[dict, dict, str]:
-    """(data, tokens, model used). Raises only if every provider fails."""
+def complete_json(prompt: str, schema: dict, models: list[str], key: str, required: tuple[str, ...],
+                  allow_groq: bool = True) -> tuple[dict, dict, str]:
+    """(data, tokens, model used). Raises only if every allowed provider fails."""
     body = {"contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {"temperature": 0, "responseMimeType": "application/json", "responseSchema": schema}}
     try:
@@ -56,6 +57,6 @@ def complete_json(prompt: str, schema: dict, models: list[str], key: str, requir
         return data, tokens, model
     except Exception:
         groq_key = os.environ.get("GROQ_API_KEY")
-        if not groq_key or len(prompt) > GROQ_MAX_PROMPT_CHARS:
+        if not allow_groq or not groq_key or len(prompt) > GROQ_MAX_PROMPT_CHARS:
             raise
         return _call_groq(prompt, required, groq_key)

@@ -81,6 +81,19 @@ def normalise(row: dict, symbol: str) -> dict:
     }
 
 
+def carry_over(errors: list[str]) -> list[dict]:
+    """A company BSE failed to answer for keeps its filings from the last good run, rather than vanishing."""
+    failed = {e.split(":", 1)[0] for e in errors}
+    path = DATA / "announcements.json"
+    if not failed or not path.exists():
+        return []
+    try:
+        previous = json.loads(path.read_text())["items"]
+    except (ValueError, KeyError):
+        return []
+    return [item for item in previous if item["symbol"] in failed]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", type=int, default=3)
@@ -107,6 +120,7 @@ def main():
         return
     if errors and not feed:  # an outage must not replace the saved feed with an empty one
         raise SystemExit(f"No filings fetched; keeping the existing feed. Errors: {errors[:3]}")
+    feed.extend(carry_over(errors))
     feed.sort(key=lambda x: (x["priority"], -(datetime.fromisoformat(x["time"][:19]).timestamp() if x["time"] else 0)))
     events = group_events(feed)
     (DATA / "announcements.json").write_text(json.dumps(

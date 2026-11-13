@@ -74,6 +74,15 @@ def test_different_press_releases_stay_separate_and_p3_is_left_out():
     ])
     assert len(ev) == 2 and {e["filing_ids"][0] for e in ev} == {1, 2}
 
+def test_a_company_bse_failed_on_keeps_its_last_filings(tmp_path, monkeypatch):
+    import json
+    from ingest import announcements
+    (tmp_path / "announcements.json").write_text(json.dumps({"items": [{"symbol": "KPITTECH", "id": 1}, {"symbol": "TCS", "id": 2}]}))
+    monkeypatch.setattr(announcements, "DATA", tmp_path)
+    assert announcements.carry_over(["KPITTECH: Expecting value"]) == [{"symbol": "KPITTECH", "id": 1}]
+    assert announcements.carry_over([]) == []
+
+
 def test_alerts():
     flat = [{"date": f"2026-09-{d:02d}", "close": 100.0, "volume": 1_000_000} for d in range(1, 31)]
     spike = flat[:-1] + [{"date": "2026-09-30", "close": 105.0, "volume": 2_600_000}]

@@ -163,6 +163,8 @@ def test_groq_only_catches_short_prompts_and_checks_the_shape(monkeypatch):
         llm.complete_json("short", {}, ["x"], "k", ("rows", "missing"))
     with pytest.raises(RuntimeError):
         llm.complete_json("x" * (llm.GROQ_MAX_PROMPT_CHARS + 1), {}, ["x"], "k", ("rows",))
+    with pytest.raises(RuntimeError):  # the comparison step turns Groq off
+        llm.complete_json("short", {}, ["x"], "k", ("rows", "summary"), allow_groq=False)
     monkeypatch.delenv("GROQ_API_KEY")
     with pytest.raises(RuntimeError):
         llm.complete_json("short", {}, ["x"], "k", ("rows",))

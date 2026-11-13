@@ -303,7 +303,8 @@ def build(symbol: str) -> dict:
         saved = json.loads(path.read_text())
     else:
         try:
-            comparison, tokens, model = complete_json(prompt, COMPARE_SCHEMA, models, key, ("rows", "summary"))
+            # Gemini only: on real data Groq tested 1 promise, then 0, where Gemini tested 3. Better to say "pending".
+            comparison, tokens, model = complete_json(prompt, COMPARE_SCHEMA, models, key, ("rows", "summary"), allow_groq=False)
         except Exception:  # the extracted promises are still worth keeping; a later run only needs this one call
             return {**result, "pending": True, "summary": {"headline": "Comparison pending: the model is busy. Try again shortly.", "credibility": "insufficient"}}
         saved = {"comparison": comparison, "tokens": tokens, "model": model}
@@ -315,7 +316,9 @@ def build(symbol: str) -> dict:
     summary = saved["comparison"]["summary"]
     if card["tested"] < MIN_TESTED:  # the model's verdict on credibility needs more evidence than this
         count = card["tested"]
-        summary = {"headline": f"Only {count} promise{'' if count == 1 else 's'} can be tested so far, too few to judge.", "credibility": "insufficient"}
+        headline = ("None of these promises can be tested against reported numbers yet." if count == 0
+                    else f"Only {count} promise{'' if count == 1 else 's'} can be tested so far, too few to judge.")
+        summary = {"headline": headline, "credibility": "insufficient"}
     return {**result, "rows": rows, "scorecard": card, "summary": summary,
             "latest_reported": latest, "tokens": result["tokens"] + [saved["tokens"]], "model": saved["model"]}
 
