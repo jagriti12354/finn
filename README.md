@@ -62,7 +62,8 @@ Each card has Dismiss (swipe left, with Undo), Pin and **Dig in**, which opens t
   - Trent's year was misread, so quarter dates now come from the filing date, never the model.
   - One "promise" was really an analyst's number that management only agreed with.
 - **Infrastructure findings:**
-  - BSE's API blocks GitHub Actions, so the filings feed runs on a laptop and publishes to Supabase. The cloud API can still fetch transcript PDFs, so research works without the laptop.
+  - BSE's filings API blocks both GitHub Actions and Render with a 403, which `/health/sources` shows live. So the filings feed runs on a laptop and publishes to Supabase. The cloud API can still fetch transcript PDFs, so research works without the laptop.
+  - Screener's company pages do work from the cloud, and they keep BSE's labels. But they show only the latest 5 filings per company, with dates and no times. That would lose filings on busy results days, and lose the before-or-after-the-close timing that price-move cards depend on. I kept the full BSE feed on the laptop rather than trade accuracy for convenience. A cloud screener poller as a fallback, merged with the laptop's feed by filing ID, is the next step.
   - Windows Smart App Control blocked pandas and PyMuPDF on the dev laptop. Both were replaced with plain Python and pypdf, and the app is plain HTML and JS with no build step.
 
 ## Left out on purpose
