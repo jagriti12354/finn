@@ -180,8 +180,10 @@ def run(symbol: str, background: BackgroundTasks):
     if job and job["status"] == "running":
         return {"status": "running"}
     existing = get_store().get("research", symbol)
-    fallback = existing and str((existing.get("guidance") or {}).get("model", "")).startswith("groq/")
-    if existing and not fallback and existing.get("bull_bear") is not None and _now() - datetime.fromisoformat(existing["updated_at"]) < FRESH_FOR:
+    guide = (existing or {}).get("guidance") or {}
+    fallback = any(str((part or {}).get("model") or "").startswith("groq/") for part in (guide, (existing or {}).get("bull_bear")))
+    incomplete = bool((guide.get("coverage") or {}).get("failed"))  # some transcripts failed to read, usually a busy model
+    if existing and not fallback and not incomplete and existing.get("bull_bear") is not None and _now() - datetime.fromisoformat(existing["updated_at"]) < FRESH_FOR:
         return {"status": "fresh"}
     get_store().put("jobs", symbol, {"status": "running", "started_at": _now().isoformat()})
     background.add_task(run_research, symbol)

@@ -108,6 +108,16 @@ def test_a_groq_fallback_result_can_be_rerun(client, monkeypatch):
     assert client.post("/research/x/run").json()["status"] == "started"
 
 
+def test_failed_calls_or_a_groq_case_can_be_rerun(client, monkeypatch):
+    monkeypatch.setattr(main, "run_research", lambda s: None)
+    store = get_store()
+    store.put("research", "X", {"updated_at": "2026-11-05T16:00:00", "guidance": {"model": "g", "coverage": {"failed": ["May 2026"]}}, "bull_bear": {"bull": []}})
+    assert client.post("/research/x/run").json()["status"] == "started"
+    store.put("jobs", "X", None)
+    store.put("research", "X", {"updated_at": "2026-11-05T16:00:00", "guidance": {"model": "g", "coverage": {"failed": []}}, "bull_bear": {"model": "groq/m"}})
+    assert client.post("/research/x/run").json()["status"] == "started"
+
+
 def test_promises_not_yet_due_are_not_evidence():
     rows = [{"verdict": "too_early", "promise": "Grow 10%", "source": "c"}, {"verdict": "missed", "promise": "Grow 20%", "source": "d", "actual": {"value": 5}}]
     evidence = bullbear.catalogue({"sections": {k: {"source": "S", "signals": []} for k in ("trajectory", "balance_sheet", "cash_quality")}}, {"rows": rows})

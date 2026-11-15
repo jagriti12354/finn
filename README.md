@@ -100,7 +100,7 @@ Laptop (Task Scheduler, every 30 min)        Render                       Phone
 | `research/` | Number sections, promised vs delivered, bull vs bear, model fallback |
 | `api/` | FastAPI app and the Supabase store |
 | `web/` | The mobile app |
-| `tests/` | 118 tests |
+| `tests/` | 120 tests |
 
 ## Run it
 
